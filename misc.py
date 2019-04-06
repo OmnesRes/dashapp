@@ -1,5 +1,5 @@
 
-
+import os
 def kaplan(survtimes):
     h_coords=[]
     v_coords=[]
@@ -36,7 +36,8 @@ def loop(newsurv,y,h_coords,v_coords,lost):
 
 
 ##read some data from OncoLnc
-f=open('donson.csv')
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+f=open(os.path.join(BASE_DIR,'donson.csv'))
 f.readline()
 patients,days,status,expression=zip(*[i.split(',')[:-1] for i in f])
 patient_data=[[int(i),0 if j=='Alive' else 1,float(k),l] for i,j,k,l in zip(days,status,expression,patients)]
