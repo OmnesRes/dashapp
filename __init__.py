@@ -24,55 +24,22 @@ app = dash.Dash(__name__, external_stylesheets=external_stylesheets,external_scr
 ##load functions and data
 from misc import *
 
-##OncoPrint
-
-data = [go.Scatter(
-    x=range(0,len(patients)),
-    y=[1]*len(patients),
-    text=patients,
-    hoverinfo='text',
-    mode='markers',
-    marker=dict(opacity=0)
-    )]
-
-layout = go.Layout(
-    autosize=False,
-    width=7000,
-    height=50,
-    yaxis = dict(zeroline = False,
-            showgrid = False,
-            range=[-.1,1.1],
-            showticklabels=False,
-            fixedrange=True
-            ),
-    xaxis = dict(zeroline = False,
-            showgrid = False,
-            showticklabels=False,
-            range=[-1,len(patients)+1],
-            ),
-    shapes=[dict(type='line',
-                x0=i,
-                y0=0,
-                x1=i,
-                y1=1,
-                line = dict(color='green',
-                            width=10))\
-        for i in range(0,len(patients))],
-    hoverlabel=dict(bgcolor='white',
-                    font=dict(color='black',size=24)),
-    dragmode='pan',
-    margin=go.layout.Margin(
-        l=0,
-        r=0,
-        b=0,
-        t=0,
-        pad=0
-    )
-)
-
-oncoprint = go.Figure(data=data, layout=layout)
-
 app.layout = html.Div(children=[
+    html.Div(className='col-sm-12',children=[
+
+
+        html.Div(className='col-sm-3',children=[
+            dcc.Dropdown(options=[
+                {'label': 'Survival', 'value': 'surv'},
+                {'label': 'Expression', 'value': 'exp'},
+                ],
+                value=['surv', 'exp'],
+                multi=True
+            ),
+        ]),
+        html.Div(className='col-sm-9'
+        ),
+    ]),
 
     html.Div(className='col s12',children=[
         html.Form(className='col s12',children=[
@@ -81,65 +48,40 @@ app.layout = html.Div(children=[
                 html.Div(className='col s4',children=[
                     html.Div(className='col s2'),
                     html.Div(className='input-field col s4',children=[
-                        dcc.Input(id='lower', type='text',placeholder='50'),
-                        html.Label(htmlFor='lower',children='Lower')]),
+                        dcc.Input(id='lower', type='text',placeholder='50',style=dict(textAlign='right')),
+                        html.Label(htmlFor='lower',children='Lower',style=dict(textAlign='right',width='50%'))]),
                     html.Div(className='input-field col s4',children=[
-                        dcc.Input(id='upper', type='text',placeholder='50'),
-                        html.Label(htmlFor='upper',children='Upper')]),
+                        dcc.Input(id='upper', type='text',placeholder='50',style=dict(textAlign='right')),
+                        html.Label(htmlFor='upper',children='Upper',style=dict(textAlign='right',width='50%'))]),
                     html.Div(className='col s2')
                     ]),
                 html.Div(className='col s4')])
             ]),
+    ]),
 
     html.Div(id='debugging',style=dict(textAlign='center',fontSize=24,color='red')),
     html.Div(id='temp_value',style={'display': 'none'},children='50'),
-        
 
-    html.Div(children=[
-        html.Div(style={'textAlign': 'center'},children=[html.H3('Kaplan'),
-                dcc.Graph(className='col-sm-6',style={'margin':'0 auto'},id='kaplan',
-                config=dict(displayModeBar=False))]
-                 )]
-             ),
-
-    html.Div(className='row',style=dict(marginTop=40),children=[
-        html.Div(className='col-sm-3'),
-        html.Div(className='col-sm-3',children=[
-            html.Div(className='form-group',children=[
-                dcc.Textarea(style=dict(fontFamily='Courier',fontSize=14),id='lower_patients',className="form-control",rows=5)],
-                ),
-            ]),
-        html.Div(className='col-sm-3',children=[
-            html.Div(className='form-group',children=[
-                dcc.Textarea(style=dict(fontFamily='Courier',fontSize=14),id='upper_patients',className="form-control",rows=5)],
-                ),
-        html.Div(className='col-sm-3')]
-            )]
-        ),
-
-
-    html.Div(style={'textAlign': 'center'},children=[html.H3('OncoPrint'),
-            dcc.Graph(id='oncoprint',
-            style={'overflowX': 'scroll', 'width': '1500','margin':'0 auto'},
-            config=dict(displayModeBar=False))]),
-    ])
-
+    html.Div(id='graphs',children='Please wait while loading'
+    )
 ])
 
 
 
 
 @app.callback(
-    [Output('kaplan', 'figure'),
-     Output('lower_patients', 'value'),
-     Output('upper_patients', 'value'),
-     Output('oncoprint','figure')],
-    [Input('lower', 'value'),Input('upper', 'value')])
+    Output('graphs','children'),
+    [Input('lower', 'value'),Input('upper', 'value')]
+    )
 
 def update_kaplan(lower,upper):
     if lower==None and upper==None:
         lower=50
         upper=50
+    elif lower==None:
+        pass
+    elif upper==None:
+        pass
     else:
         lower=int(lower)
         upper=int(upper)
@@ -223,20 +165,27 @@ def update_kaplan(lower,upper):
     layout = go.Layout(
         yaxis = dict(zeroline = False,
                 showgrid = False,
-                showticklabels=False,
+                showticklabels=True,
+                tickfont=dict(size=16),
+                title=dict(text="Survival probability",font=dict(size=20)),
                      ),
         xaxis = dict(zeroline = False,
                 showgrid = False,
-                showticklabels=False,
-                rangemode= 'nonnegative'),
+                showticklabels=True,
+                tickfont=dict(size=16),
+                rangemode= 'nonnegative',
+                title=dict(text='Days',font=dict(size=20))
+                     ),
         hoverlabel=dict(bgcolor='white',
                         font=dict(color='black',size=24)),
-        legend=dict(x=.75,y=1),
+        legend=dict(x=.75,
+                    y=1,
+                    font=dict(size=16)),
         margin=go.layout.Margin(
-            l=5,
             r=0,
-            b=0,
             t=0,
+            b=50,
+            l=60,
             pad=0
         ),
         hovermode='closest',
@@ -304,7 +253,50 @@ def update_kaplan(lower,upper):
 
     oncoprint = go.Figure(data=data, layout=layout)
 
-    return kaplan_plot,lower_patients,upper_patients,oncoprint
+
+    graphs=[html.Div(children=[
+                html.Div(style={'textAlign': 'center'},children=[html.H3('Kaplan'),
+                    dcc.Graph(figure=kaplan_plot,
+                              className='col-sm-6',
+                              style={'margin':'0 auto'},
+                              config=dict(displayModeBar=False)
+                              )
+                ]),
+                 
+                html.Div(className='row',style=dict(marginTop=40),children=[
+                    html.Div(className='col-sm-3'),
+                    html.Div(className='col-sm-3',children=[
+                        html.Div(className='form-group',children=[
+                            dcc.Textarea(value=lower_patients,
+                                style=dict(fontFamily='Courier',fontSize=14),
+                                className="form-control",
+                                rows=5
+                            )],
+                        ),
+                    ]),
+                    html.Div(className='col-sm-3',children=[
+                        html.Div(className='form-group',children=[
+                            dcc.Textarea(value=upper_patients,
+                                style=dict(fontFamily='Courier',fontSize=14),
+                                className="form-control",
+                                rows=5
+                            )],
+                        ),
+                    ]),
+                    html.Div(className='col-sm-3')
+                ]),
+
+                html.Div(style={'textAlign': 'center'},children=[html.H3('OncoPrint'),
+                    dcc.Graph(figure=oncoprint,
+                    style={'overflowX': 'scroll', 'width': '1500','margin':'0 auto'},
+                    config=dict(displayModeBar=False)
+                    )
+                ]),
+            ])
+        ]
+                     
+
+    return graphs
 
 
 
@@ -313,10 +305,18 @@ def update_kaplan(lower,upper):
     Output('debugging', 'children'),
     [Input('lower', 'value'),Input('upper', 'value')])
 def error_message(lower,upper): 
-    lower=int(lower)
-    upper=int(upper)
-    if lower+upper>100:
-        return "warning, your values exceed 100"
+    if lower==None and upper==None:
+        lower=50
+        upper=50
+    elif lower==None:
+        pass
+    elif upper==None:
+        pass
+    else:
+        lower=int(lower)
+        upper=int(upper)
+        if lower+upper>100:
+            return "warning, your values exceed 100"
 
 server=app.server
 
