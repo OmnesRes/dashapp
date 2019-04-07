@@ -54,6 +54,8 @@ layout = go.Layout(title = 'Histogram',
 histogram = go.Figure(data=data, layout=layout)
 
 
+
+
 app.layout = html.Div(children=[
     html.Div(className='col-sm-12',children=[
 
@@ -95,7 +97,8 @@ app.layout = html.Div(children=[
                     html.Div(id='graphs')
         ]),
         html.Div(id='expression',style={'display': 'none'},className='col-sm-12',children=[
-            dcc.Graph(id='histogram',figure=histogram)
+            html.Div(dcc.Graph(id='histogram',figure=histogram)),
+            html.Div(dcc.Graph(id='boxplot'))
         ])
     ]),
     html.Div(id='output-data')
@@ -151,6 +154,92 @@ def show_survival(selections):
     return style, className
         
 
+
+@app.callback(
+    Output('boxplot','figure'),
+    [Input('lower', 'value'),
+     Input('upper', 'value'),
+     Input('histogram', 'selectedData'),
+     Input('selections', 'value')],
+    )
+
+def update_boxplot(lower,upper,selection,selections):
+    toggle=False
+    try:
+        if 'exp' not in selections:
+            lower=int(lower)
+            upper=int(upper)
+            bottom=sorted(patient_data[:int(len(patient_data)*lower/100.0)])
+            top=sorted(patient_data[-1*int(len(patient_data)*upper/100.0):])
+        else:
+            lower=selection['range']['x'][0]
+            upper=selection['range']['x'][1]
+            bottom=sorted([i for i in patient_data if i[2]>lower and i[2]<upper])
+            top=sorted([i for i in patient_data if i[2]<lower or i[2]>upper])
+            toggle=True
+            
+    except:
+        if lower==None and upper==None:
+            lower=50
+            upper=50
+        else:
+            lower=int(lower)
+            upper=int(upper)
+
+        bottom=sorted(patient_data[:int(len(patient_data)*lower/100.0)])
+        top=sorted(patient_data[-1*int(len(patient_data)*upper/100.0):])
+
+    y0 = [i[2] for i in bottom]
+    y1 = [i[2] for i in top]
+
+    if toggle==True:
+        trace0_name="Selected"
+    else:
+        trace0_name="Lower"
+
+        
+    trace0 = go.Box(
+        y=y0,
+        fillcolor='blue',
+        name=trace0_name
+    )
+
+    if toggle==True:
+        trace1_name="Not Selected"
+    else:
+        trace1_name="Higher"
+
+
+    trace1 = go.Box(
+        y=y1,
+        fillcolor='red',
+        name=trace1_name
+    )
+
+
+    data = [trace0, trace1]
+
+    layout = go.Layout(title = 'Boxplot',
+
+        yaxis = dict(zeroline = False,
+                showgrid = False,
+                showticklabels=True,
+                title="Reads",
+                fixedrange=True),
+        xaxis = dict(zeroline = False,
+                showgrid = False,
+                showticklabels=True,
+                fixedrange=True,
+                ),
+        hoverlabel=dict(bgcolor='white',
+                        font=dict(color='black',size=24)),
+    )
+
+    boxplot = go.Figure(data=data, layout=layout)
+
+    return boxplot
+
+
 @app.callback(
     Output('graphs','children'),
     [Input('lower', 'value'),
@@ -193,6 +282,7 @@ def update_kaplan(lower,upper,selection,selections):
     else:
         x_end=[]
         y_end=[]
+
 
     if toggle==True:
         selection['range']['x'][0]
