@@ -5,7 +5,8 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly
 import plotly.graph_objs as go
-from dash.dependencies import Input, Output
+from dash.dependencies import Input, Output, State
+import json
 
 external_stylesheets = ["https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css",
                         {'rel':"stylesheet",
@@ -20,75 +21,169 @@ external_scripts = ['https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js
 
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets,external_scripts=external_scripts)
 
-
+app.config.supress_callback_exceptions = True
 ##load functions and data
 from misc import *
+
+
+data = [go.Histogram(
+    x=expression,
+    nbinsx=100,
+    hoverinfo='none'
+    )]
+
+layout = go.Layout(title = 'Histogram',
+
+    yaxis = dict(zeroline = False,
+            showgrid = False,
+            showticklabels=True,
+            title="Count",
+            fixedrange=True),
+    xaxis = dict(zeroline = False,
+            showgrid = False,
+            showticklabels=True,
+            title="Reads",
+            fixedrange=True,
+            ),
+    hoverlabel=dict(bgcolor='white',
+                    font=dict(color='black',size=24)),
+    dragmode='select',
+    selectdirection='h'
+)
+
+histogram = go.Figure(data=data, layout=layout)
+
 
 app.layout = html.Div(children=[
     html.Div(className='col-sm-12',children=[
 
 
         html.Div(className='col-sm-3',children=[
-            dcc.Dropdown(options=[
-                {'label': 'Survival', 'value': 'surv'},
-                {'label': 'Expression', 'value': 'exp'},
-                ],
-                value=['surv', 'exp'],
-                multi=True
+            dcc.Dropdown(id='selections',
+                         options=[
+                            {'label': 'Survival', 'value': 'surv'},
+                            {'label': 'Expression', 'value': 'exp'},
+                         ],
+                         value=['surv', 'exp'],
+                         multi=True
             ),
         ]),
         html.Div(className='col-sm-9'
         ),
     ]),
 
-    html.Div(className='col s12',children=[
-        html.Form(className='col s12',children=[
-            html.Div(className='row',children=[
-                html.Div(className='col s4'),
-                html.Div(className='col s4',children=[
-                    html.Div(className='col s2'),
-                    html.Div(className='input-field col s4',children=[
-                        dcc.Input(id='lower', type='text',placeholder='50',style=dict(textAlign='right')),
-                        html.Label(htmlFor='lower',children='Lower',style=dict(textAlign='right',width='50%'))]),
-                    html.Div(className='input-field col s4',children=[
-                        dcc.Input(id='upper', type='text',placeholder='50',style=dict(textAlign='right')),
-                        html.Label(htmlFor='upper',children='Upper',style=dict(textAlign='right',width='50%'))]),
-                    html.Div(className='col s2')
-                    ]),
-                html.Div(className='col s4')])
-            ]),
-    ]),
-
     html.Div(id='debugging',style=dict(textAlign='center',fontSize=24,color='red')),
     html.Div(id='temp_value',style={'display': 'none'},children='50'),
-
-    html.Div(id='graphs',children='Please wait while loading'
-    )
+    html.Div(className='row',children=[
+        html.Div(id='survival',style={'display': 'none'},className='col-sm-12',children=[
+                    html.Div(id='forms',className='col s12',children=[
+                        html.Form(className='col s12',children=[
+                            html.Div(className='row',children=[
+                                html.Div(className='col s4'),
+                                html.Div(className='col s4',children=[
+                                    html.Div(className='input-field col s6',children=[
+                                        dcc.Input(id='lower', type='text',placeholder='50',style=dict(textAlign='right')),
+                                        html.Label(htmlFor='lower',children='Lower',style=dict(textAlign='right',width='50%'))]),
+                                    html.Div(className='input-field col s6',children=[
+                                        dcc.Input(id='upper', type='text',placeholder='50',style=dict(textAlign='right')),
+                                        html.Label(htmlFor='upper',children='Upper',style=dict(textAlign='right',width='50%'))]),
+                                    ]),
+                                html.Div(className='col s4')
+                            ])
+                        ])
+                    ]),
+                    html.Div(id='graphs')
+        ]),
+        html.Div(id='expression',style={'display': 'none'},className='col-sm-12',children=[
+            dcc.Graph(id='histogram',figure=histogram)
+        ])
+    ]),
+    html.Div(id='output-data')
 ])
+
+
+
+##@app.callback(
+##    Output('output-data', 'children'),
+##    [Input('histogram', 'selectedData')])
+##def display_selected_data(selectedData):
+##    return str(selectedData)
 
 
 
 
 @app.callback(
-    Output('graphs','children'),
-    [Input('lower', 'value'),Input('upper', 'value')]
+    [Output('expression','style'),
+     Output('expression','className')],
+    [Input('selections', 'value')]
     )
 
-def update_kaplan(lower,upper):
-    if lower==None and upper==None:
-        lower=50
-        upper=50
-    elif lower==None:
-        pass
-    elif upper==None:
-        pass
+def show_expression(selections):
+    if 'exp' in selections:
+        style={'margin': '0 auto'}
     else:
-        lower=int(lower)
-        upper=int(upper)
+        style={'display': 'none'}
+    if len(selections)==2:
+        className='col-sm-6'
+    else:
+        className='col-sm-8'
+    return style, className
+        
 
-    
-    bottom=sorted(patient_data[:int(len(patient_data)*lower/100.0)])
-    top=sorted(patient_data[-1*int(len(patient_data)*upper/100.0):])
+
+
+
+@app.callback(
+    [Output('survival','style'),
+     Output('survival','className')],
+    [Input('selections', 'value')]
+    )
+
+def show_survival(selections):
+    if 'surv' in selections:
+        style={'margin': '0 auto'}
+    else:
+        style={'display': 'none'}
+    if len(selections)==2:
+        className='col-sm-6'
+    else:
+        className='col-sm-8'
+    return style, className
+        
+
+@app.callback(
+    Output('graphs','children'),
+    [Input('lower', 'value'),
+     Input('upper', 'value'),
+     Input('histogram', 'selectedData'),
+     Input('selections', 'value')],
+    )
+
+def update_kaplan(lower,upper,selection,selections):
+    toggle=False
+    try:
+        if 'exp' not in selections:
+            lower=int(lower)
+            upper=int(upper)
+            bottom=sorted(patient_data[:int(len(patient_data)*lower/100.0)])
+            top=sorted(patient_data[-1*int(len(patient_data)*upper/100.0):])
+        else:
+            lower=selection['range']['x'][0]
+            upper=selection['range']['x'][1]
+            bottom=sorted([i for i in patient_data if i[2]>lower and i[2]<upper])
+            top=sorted([i for i in patient_data if i[2]<lower or i[2]>upper])
+            toggle=True
+            
+    except:
+        if lower==None and upper==None:
+            lower=50
+            upper=50
+        else:
+            lower=int(lower)
+            upper=int(upper)
+
+        bottom=sorted(patient_data[:int(len(patient_data)*lower/100.0)])
+        top=sorted(patient_data[-1*int(len(patient_data)*upper/100.0):])
 
     k_plot=kaplan(bottom)
 
@@ -99,13 +194,18 @@ def update_kaplan(lower,upper):
         x_end=[]
         y_end=[]
 
+    if toggle==True:
+        selection['range']['x'][0]
+        trace1_label='Selected<br>N='
+    else:
+        trace1_label='Low Expression<br>N='
     trace1 = go.Scatter(
         x=[0]+[i[0] for i in k_plot[0]]+x_end,
         y=[i[1] for i in k_plot[0]]+[k_plot[1][-1][2]]+y_end,
         hoverinfo='text+x+y',
         text=['']+[i[-1] for i in k_plot[1]],
         mode='lines',
-        name='Low Expression<br>N='+str(len(bottom)),
+        name=trace1_label+str(len(bottom)),
         showlegend=True,
         legendgroup='lower',
         line=dict(color='blue',
@@ -134,6 +234,12 @@ def update_kaplan(lower,upper):
         x_end=[]
         y_end=[]
 
+    
+    if toggle==True:
+        selection['range']['x'][0]
+        trace3_label='Not Selected<br>N='
+    else:
+        trace3_label='High Expression<br>N='
     trace3 = go.Scatter(
         x=[0]+[i[0] for i in k_plot[0]]+x_end,
         y=[i[1] for i in k_plot[0]]+[k_plot[1][-1][2]]+y_end,
@@ -141,7 +247,7 @@ def update_kaplan(lower,upper):
         text=['']+[i[-1] for i in k_plot[1]],
         mode='lines',
         legendgroup='higher',
-        name='High Expression<br>N='+str(len(top)),
+        name=trace3_label+str(len(top)),
         showlegend=True,
         line=dict(color='red',
                   dash='solid',
@@ -253,19 +359,17 @@ def update_kaplan(lower,upper):
 
     oncoprint = go.Figure(data=data, layout=layout)
 
-
     graphs=[html.Div(children=[
                 html.Div(style={'textAlign': 'center'},children=[html.H3('Kaplan'),
                     dcc.Graph(figure=kaplan_plot,
-                              className='col-sm-6',
+                              #className='col-sm-12',
                               style={'margin':'0 auto'},
                               config=dict(displayModeBar=False)
                               )
                 ]),
                  
                 html.Div(className='row',style=dict(marginTop=40),children=[
-                    html.Div(className='col-sm-3'),
-                    html.Div(className='col-sm-3',children=[
+                    html.Div(className='col-sm-6',children=[
                         html.Div(className='form-group',children=[
                             dcc.Textarea(value=lower_patients,
                                 style=dict(fontFamily='Courier',fontSize=14),
@@ -274,7 +378,7 @@ def update_kaplan(lower,upper):
                             )],
                         ),
                     ]),
-                    html.Div(className='col-sm-3',children=[
+                    html.Div(className='col-sm-6',children=[
                         html.Div(className='form-group',children=[
                             dcc.Textarea(value=upper_patients,
                                 style=dict(fontFamily='Courier',fontSize=14),
@@ -288,35 +392,32 @@ def update_kaplan(lower,upper):
 
                 html.Div(style={'textAlign': 'center'},children=[html.H3('OncoPrint'),
                     dcc.Graph(figure=oncoprint,
-                    style={'overflowX': 'scroll', 'width': '1500','margin':'0 auto'},
+                    style={'overflowX': 'scroll', 'width': '800','margin':'0 auto'},
                     config=dict(displayModeBar=False)
                     )
                 ]),
             ])
         ]
-                     
-
     return graphs
 
 
-
     
-@app.callback(
-    Output('debugging', 'children'),
-    [Input('lower', 'value'),Input('upper', 'value')])
-def error_message(lower,upper): 
-    if lower==None and upper==None:
-        lower=50
-        upper=50
-    elif lower==None:
-        pass
-    elif upper==None:
-        pass
-    else:
-        lower=int(lower)
-        upper=int(upper)
-        if lower+upper>100:
-            return "warning, your values exceed 100"
+##@app.callback(
+##    Output('debugging', 'children'),
+##    [Input('lower', 'value'),Input('upper', 'value')])
+##def error_message(lower,upper): 
+##    if lower==None and upper==None:
+##        lower=50
+##        upper=50
+##    elif lower==None:
+##        pass
+##    elif upper==None:
+##        pass
+##    else:
+##        lower=int(lower)
+##        upper=int(upper)
+##        if lower+upper>100:
+##            return "warning, your values exceed 100"
 
 server=app.server
 
