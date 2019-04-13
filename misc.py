@@ -37,9 +37,20 @@ def loop(newsurv,y,h_coords,v_coords,lost):
 
 ##read some data from OncoLnc
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-f=open(os.path.join(BASE_DIR,'donson.csv'))
-f.readline()
-patients,days,status,expression=zip(*[i.split(',')[:-1] for i in f])
+with open(os.path.join(BASE_DIR,'donson.csv')) as f:
+    f.readline()
+    patients,days,status,expression=zip(*[i.split(',')[:-1] for i in f])
 patient_data=[[int(i),0 if j=='Alive' else 1,float(k),l] for i,j,k,l in zip(days,status,expression,patients)]
 patient_data.sort(key=lambda x:x[2])
+
+with open(os.path.join(BASE_DIR,'donson_clinical.txt')) as f:
+    temp_clinical={}
+    for i in f:
+        line=eval(i.strip())
+        temp_clinical[line[0]]=line[3:]
+
+for i in patient_data:
+    i+=temp_clinical[i[-1]]
+
+
 
