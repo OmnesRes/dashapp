@@ -61,11 +61,11 @@ data = [go.Histogram(
     hoverinfo='none'
     )]
 
-layout = go.Layout(title = 'Age',
+layout = go.Layout(
 
     yaxis = dict(zeroline = False,
             showgrid = False,
-            showticklabels=True,
+            showticklabels=False,
             title="Count",
             fixedrange=True),
     xaxis = dict(zeroline = False,
@@ -78,6 +78,12 @@ layout = go.Layout(title = 'Age',
                     font=dict(color='black',size=24)),
     dragmode='select',
     selectdirection='h',
+    margin=go.layout.Margin(
+                r=0,
+                b=120,
+                t=0,
+                l=20
+    )
 )
 
 histogram_age = go.Figure(data=data, layout=layout)
@@ -91,7 +97,15 @@ data=[go.Pie(labels=labels,
              values=values,
              hoverinfo='label+percent',
              textinfo='value')]
-layout = go.Layout(title = 'Sex Pie Chart',
+layout = go.Layout(margin=go.layout.Margin(
+                    pad=0,
+                    r=0,
+                    b=0,
+                    t=0
+                    ),
+                   legend=dict(x=.6,
+                        y=.95,
+                        orientation='v'),
                    )
 pie_sex=go.Figure(data=data, layout=layout)
 
@@ -105,8 +119,17 @@ data=[go.Pie(labels=labels,
              values=values,
              hoverinfo='label+percent',
              textinfo='value')]
-layout = go.Layout(title = 'Grade Pie Chart',
+layout = go.Layout(margin=go.layout.Margin(
+                    pad=0,
+                    r=0,
+                    b=0,
+                    t=0
+                    ),
+                   legend=dict(x=.8,
+                        y=.95,
+                        orientation='h'),
                    )
+
 pie_grade=go.Figure(data=data, layout=layout)
 
 
@@ -135,18 +158,21 @@ app.layout = html.Div(children=[
     html.Div(className='row',children=[
         html.Div(className='col-sm-6',children=[
             html.Div(id='demographics',style={'display': 'none'},className='row',children=[
-                    html.Div(className='col-sm-4',style={'padding': '0'},children=[dcc.Graph(id='age',figure=histogram_age)]),
-                    html.Div(className='col-sm-4',style={'padding': '0'},children=[dcc.Graph(id='sex',figure=pie_sex)]),
-                    html.Div(className='col-sm-4',style={'padding': '0'},children=[dcc.Graph(id='grade',figure=pie_grade)]),
+                    html.Div(className='col-sm-4',style={'padding': '0'},children=[html.Div('Age',style={'text-align':'center'}),
+                                                                                            dcc.Graph(id='age',figure=histogram_age,config=dict(displayModeBar=False))]),
+                    html.Div(className='col-sm-4',style={'padding': '0'},children=[html.Div('Sex',style={'text-align':'center'}),
+                                                                                   dcc.Graph(id='sex',figure=pie_sex,config=dict(displayModeBar=False))]),
+                    html.Div(className='col-sm-4',style={'padding': '0'},children=[html.Div('Grade',style={'text-align':'center'}),
+                                                                                   dcc.Graph(id='grade',figure=pie_grade,config=dict(displayModeBar=False))]),
             ]),
             html.Div(className='col-sm-12',children=[
                 html.Div(id='expression',style={'display': 'none'},className='col-sm-12',children=[
-                    html.Div(dcc.Graph(id='histogram',figure=histogram_expression))
+                    html.Div(dcc.Graph(id='histogram',figure=histogram_expression,config=dict(displayModeBar=False)))
                 ]),
             ])
         ]),
 
-        html.Div(className='col-sm-6',children=[
+        html.Div(className='col-sm-6',style={'padding-left':'50px'},children=[
             dcc.Tabs(id="tabs", value='kaplan', children=[
                 dcc.Tab(label='Kaplan-Meier', value='kaplan'),
                 dcc.Tab(label='Box Plot', value='box'),
@@ -368,9 +394,9 @@ def update_tabs(lower,upper,selection,tabs,selections):
         
 
     elif tabs=='data':
-        first_line='{0:<15} {1:<5} {2:>9} {3:>14}  {4:>16}  {5:>18}  {6:>20}'.format('Patient','Days','Status', 'Grade', 'Sex', 'Age', 'Expression\n')
-        lower_patients=first_line+''.join(['{0:<15} {1:<5} {2:>9} {3:>14}  {4:>16}  {5:>18}  {6:>20}\n'.format(i[3],str(i[0]),'Alive' if i[1]==0 else 'Dead',i[4],i[5],i[6],i[2]) for i in bottom])
-        upper_patients=first_line+''.join(['{0:<15} {1:<5} {2:>9} {3:>14}  {4:>16}  {5:>18}  {6:>20}\n'.format(i[3],str(i[0]),'Alive' if i[1]==0 else 'Dead',i[4],i[5],i[6],i[2]) for i in top])
+        first_line='{0:<15} {1:<5} {2:>9} {3:>12}  {4:>14}  {5:>16}  {6:>18}'.format('Patient','Days','Status', 'Grade', 'Sex', 'Age', 'Expression\n')
+        lower_patients=first_line+''.join(['{0:<15} {1:<5} {2:>9} {3:>12}  {4:>14}  {5:>16}  {6:>18}\n'.format(i[3],str(i[0]),'Alive' if i[1]==0 else 'Dead',i[4],i[5],i[6],i[2]) for i in bottom])
+        upper_patients=first_line+''.join(['{0:<15} {1:<5} {2:>9} {3:>12}  {4:>14}  {5:>16}  {6:>18}\n'.format(i[3],str(i[0]),'Alive' if i[1]==0 else 'Dead',i[4],i[5],i[6],i[2]) for i in top])
         return [html.Div(className='col-sm-12',style={'margin-top':'20'},children=[
                    html.Div(className='form-group',children=[
                             dcc.Textarea(value=lower_patients,
@@ -533,14 +559,14 @@ def update_tabs(lower,upper,selection,tabs,selections):
 ##        upper=int(upper)
 ##        if lower+upper>100:
 ##            return "warning, your values exceed 100"
-
-@app.callback(
-    Output('debugging', 'children'),
-    [Input('sex', 'clickData')])
-def error_message(selection): 
-    return str(selection)
-
-
+##
+##@app.callback(
+##    Output('debugging', 'children'),
+##    [Input('sex', 'clickData')])
+##def error_message(selection): 
+##    return str(selection)
+##
+##
 
 
 
