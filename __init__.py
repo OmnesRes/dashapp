@@ -135,10 +135,10 @@ pie_grade=go.Figure(data=data, layout=layout)
 
 
 app.layout = html.Div(children=[
-    html.Div(className='col-sm-12',children=[
+    html.Div(className='row',children=[
 
 
-        html.Div(className='col-sm-3',children=[
+        html.Div(className='col-sm-3',style={'padding-left':'50px'},children=[
             'Summary Reports',
             dcc.Dropdown(id='selections',
                          options=[
@@ -149,8 +149,17 @@ app.layout = html.Div(children=[
                          multi=True
             ),
         ]),
-        html.Div(className='col-sm-9'
+        html.Div(className='col-sm-3'
         ),
+        html.Div(className='col-sm-6',style={'padding-left':'50px'},children=[
+            'Selections',
+            dcc.Dropdown(id='selection',
+                         options=[
+                         ],
+                         value=[],
+                         multi=True
+            ),
+        ]),
     ]),
 
     html.Div(id='debugging',style=dict(textAlign='center',fontSize=24,color='red')),
@@ -174,8 +183,8 @@ app.layout = html.Div(children=[
 
         html.Div(className='col-sm-6',style={'padding-left':'50px'},children=[
             dcc.Tabs(id="tabs", value='kaplan', children=[
-                dcc.Tab(label='Kaplan-Meier', value='kaplan'),
-                dcc.Tab(label='Box Plot', value='box'),
+                dcc.Tab(label='Survival', value='kaplan'),
+                dcc.Tab(label='Expression', value='box'),
                 dcc.Tab(label='Data', value='data'),
                 dcc.Tab(label='OncoPrint', value='oncoprint')
             ]),
@@ -475,7 +484,7 @@ def update_tabs(lower,upper,selection,tabs,selections):
         data = [go.Scatter(
         x=range(0,len(bottom+top)),
         y=[1]*len(patients),
-        text=[i[-1] for i in bottom+top],
+        text=[i[3] for i in bottom+top],
         hoverinfo='text',
         mode='markers',
         marker=dict(opacity=0)
@@ -536,9 +545,66 @@ def update_tabs(lower,upper,selection,tabs,selections):
 
 
 
+@app.callback(
+    [Output('selection', 'options'),
+     Output('selection', 'value')],
+    [Input('sex', 'clickData'),
+     Input('grade', 'clickData'),
+     Input('age', 'selectedData'),
+     Input('histogram', 'selectedData')],
+    [State('selection', 'options'),
+     State('selection', 'value')])
+
+def update_selection(selection1,selection2,selected1,selected2,options,value):
+    selections=[i for i in [selection1,selection2] if i!=None]
+    for selection in selections:
+        if selection['points'][0]['label'] not in [j for i in options for j in i.values()]:
+            options.append({'label':selection['points'][0]['label'],'value':selection['points'][0]['label']})
+        if selection['points'][0]['label'] not in value:
+            value.append(selection['points'][0]['label'])
+    if selected1:
+        x_min=str(round(selected1['range']['x'][0]))
+        x_max=str(round(selected1['range']['x'][1]))
+        if 'Age' in [j[:3] for i in options for j in i.values()]:
+            for index,i in enumerate(options):
+                if 'Age' in i['label']:
+                    options_index=index
+            options[options_index]={'label':'Age '+x_min+'<'+x_max,\
+                                    'value':'Age_'+x_min+'_'+x_max}
+
+            for index,i in enumerate(value):
+                if 'Age' in i:
+                    values_index=index
+            value[values_index]='Age_'+x_min+'_'+x_max
+        else:
+            options.append({'label':'Age '+x_min+'<'+x_max,\
+                            'value':'Age_'+x_min+'_'+x_max})
+            value.append('Age_'+x_min+'_'+x_max)
+
+    if selected2:
+        x_min=str(round(selected2['range']['x'][0]))
+        x_max=str(round(selected2['range']['x'][1]))
+        if 'Expression' in [j[:len('Expression')] for i in options for j in i.values()]:
+            for index,i in enumerate(options):
+                if 'Expression' in i['label']:
+                    options_index=index
+            options[options_index]={'label':'Expression '+x_min+'<'+x_max,\
+                                    'value':'Expression_'+x_min+'_'+x_max}
+
+            for index,i in enumerate(value):
+                if 'Expression' in i:
+                    values_index=index
+            value[values_index]='Expression_'+x_min+'_'+x_max
+        else:
+            options.append({'label':'Expression '+x_min+'<'+x_max,\
+                            'value':'Expression_'+x_min+'_'+x_max})
+            value.append('Expression_'+x_min+'_'+x_max)
+    
 
 
-
+    
+                    
+    return options,value
 
 
 
@@ -564,9 +630,9 @@ def update_tabs(lower,upper,selection,tabs,selections):
 ##    Output('debugging', 'children'),
 ##    [Input('sex', 'clickData')])
 ##def error_message(selection): 
-##    return str(selection)
-##
-##
+##    return str(selection['points'][0]['label'])
+
+
 
 
 
