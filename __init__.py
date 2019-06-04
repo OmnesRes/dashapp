@@ -482,7 +482,7 @@ def update_tabs(lower,upper,selection,tabs,selections):
 
     else:
         data = [go.Scatter(
-        x=range(0,len(bottom+top)),
+        x=list(range(0,len(bottom+top))),
         y=[1]*len(patients),
         text=[i[3] for i in bottom+top],
         hoverinfo='text',
